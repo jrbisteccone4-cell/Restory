@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Architecta - La Casa dei Sogni</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0b0f19;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #ffffff;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        /* UI Overlay */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 24px;
+        }
+        header {
+            text-align: center;
+            pointer-events: auto;
+        }
+        header h1 {
+            font-size: 1.5rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            font-weight: 300;
+            background: linear-gradient(45deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        header p {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 4px;
+            letter-spacing: 1px;
+        }
+        /* Controls Footer */
+        .controls-dock {
+            pointer-events: auto;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            padding: 16px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 480px;
+            margin: 0 auto;
+            width: 100%;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+        .btn-action {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-action svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.5;
+            transition: transform 0.3s ease;
+        }
+        .btn-action:hover, .btn-action.active {
+            color: #38bdf8;
+        }
+        .btn-action:hover svg {
+            transform: scale(1.1);
+        }
+        /* HUD Feedback */
+        .hud-status {
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            color: #38bdf8;
+            pointer-events: none;
+            opacity: 0.8;
+        }
+    </style>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div class="ui-layer">
+        <header>
+            <h1>Architecta</h1>
+            <p>Plastico 3D Interattivo</p>
+        </header>
+
+        <div class="hud-status" id="hud-text">Trascina per ruotare • Pinch per scalare</div>
+
+        <div class="controls-dock">
+            <button class="btn-action active" onclick="changeMaterial('wood')">
+                <svg viewBox="0 0 24 24"><path d="M3 3h18v18H3zM3 9h18M9 3v18"/></svg>
+                <span>Rovere</span>
+            </button>
+            <button class="btn-action" onclick="changeMaterial('marble')">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
+                <span>Marmo</span>
+            </button>
+            <button class="btn-action" onclick="changeMaterial('glass')">
+                <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                <span>Vetro Aura</span>
+            </button>
+            <button class="btn-action" onclick="resetView()">
+                <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                <span>Reset</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Setup Scena Three.js
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x0b0f19, 0.05);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(10, 12, 14);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+
+        // Illuminazione Ambientale e Atmosferica (Sun-Dial style)
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.DirectionalLight(0xfff5ea, 1.2);
+        sunLight.position.set(15, 25, 10);
+        sunLight.castShadow = true;
+        sunLight.shadow.mapSize.width = 2048;
+        sunLight.shadow.mapSize.height = 2048;
+        scene.add(sunLight);
+
+        const blueLight = new THREE.DirectionalLight(0x38bdf8, 0.4);
+        blueLight.position.set(-15, -10, -10);
+        scene.add(blueLight);
+
+        // Gruppo Principale della Casa (La Dollhouse)
+        const houseGroup = new THREE.Group();
+        scene.add(houseGroup);
+
+        // Pavimento Base
+        const floorGeo = new THREE.BoxGeometry(6, 0.2, 6);
+        let floorMat = new THREE.MeshStandardMaterial({ 
+            color: 0xd4a373, 
+            roughness: 0.4,
+            metalness: 0.1
+        });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.position.y = -0.1;
+        floor.receiveShadow = true;
+        houseGroup.add(floor);
+
+        // Pareti Minimaliste (Stile Plastico)
+        const wallMat = new THREE.MeshStandardMaterial({ 
+            color: 0xf8fafc, 
+            roughness: 0.8 
+        });
+
+        // Parete di Fondo
+        const backWallGeo = new THREE.BoxGeometry(6, 3, 0.2);
+        const backWall = new THREE.Mesh(backWallGeo, wallMat);
+        backWall.position.set(0, 1.5, -2.9);
+        backWall.castShadow = true;
+        backWall.receiveShadow = true;
+        houseGroup.add(backWall);
+
+        // Parete Laterale
+        const sideWallGeo = new THREE.BoxGeometry(0.2, 3, 6);
+        const sideWall = new THREE.Mesh(sideWallGeo, wallMat);
+        sideWall.position.set(-2.9, 1.5, 0);
+        sideWall.castShadow = true;
+        sideWall.receiveShadow = true;
+        houseGroup.add(sideWall);
+
+        // Elemento d'Arredo Minimalista (Divano/Blocco Design)
+        const sofaGeo = new THREE.BoxGeometry(3, 0.8, 1.2);
+        const sofaMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.5 });
+        const sofa = new THREE.Mesh(sofaGeo, sofaMat);
+        sofa.position.set(0.5, 0.4, -1.5);
+        sofa.castShadow = true;
+        houseGroup.add(sofa);
+
+        // Tavolino centrale
+        const tableGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.4, 32);
+        const tableMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2 });
+        const table = new THREE.Mesh(tableGeo, tableMat);
+        table.position.set(0.5, 0.2, 0.5);
+        table.castShadow = true;
+        houseGroup.add(table);
+
+        // Gestione dei Materiali interattivi
+        function changeMaterial(type) {
+            document.querySelectorAll('.btn-action').forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+
+            const hud = document.getElementById('hud-text');
+            if (type === 'wood') {
+                floor.material.color.setHex(0xd4a373);
+                floor.material.roughness = 0.4;
+                hud.innerText = "Materiale applicato: Rovere Naturale";
+            } else if (type === 'marble') {
+                floor.material.color.setHex(0xf1f5f9);
+                floor.material.roughness = 0.1;
+                hud.innerText = "Materiale applicato: Marmo Bianco Carrara";
+            } else if (type === 'glass') {
+                floor.material.color.setHex(0x38bdf8);
+                floor.material.roughness = 0.0;
+                floor.material.transparent = true;
+                floor.material.opacity = 0.8;
+                hud.innerText = "Materiale applicato: Vetro Strutturale Luminescente";
+            }
+        }
+
+        function resetView() {
+            targetRotationX = 0.5;
+            targetRotationY = 0.8;
+            houseGroup.scale.set(1, 1, 1);
+            document.getElementById('hud-text').innerText = "Vista ripristinata";
+        }
+
+        // Interazione Touch & Mouse per la rotazione orbitale della Dollhouse
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let targetRotationX = 0.5;
+        let targetRotationY = 0.8;
+        let rotationX = 0.5;
+        let rotationY = 0.8;
+
+        window.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const deltaX = e.clientX - previousMousePosition.x;
+            const deltaY = e.clientY - previousMousePosition.y;
+
+            targetRotationY += deltaX * 0.008;
+            targetRotationX += deltaY * 0.008;
+
+            // Limita l'inclinazione verticale
+            targetRotationX = Math.max(0.1, Math.min(Math.PI / 2, targetRotationX));
+
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+
+        window.addEventListener('mouseup', () => { isDragging = false; });
+
+        // Touch support per dispositivi mobili
+        window.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            const deltaX = e.touches[0].clientX - previousMousePosition.x;
+            const deltaY = e.touches[0].clientY - previousMousePosition.y;
+
+            targetRotationY += deltaX * 0.008;
+            targetRotationX += deltaY * 0.008;
+            targetRotationX = Math.max(0.1, Math.min(Math.PI / 2, targetRotationX));
+
+            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        });
+
+        window.addEventListener('touchend', () => { isDragging = false; });
+
+        // Responsive Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Loop di Animazione Fluido
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Interpolazione fluida della rotazione (Lerp)
+            rotationX += (targetRotationX - rotationX) * 0.1;
+            rotationY += (targetRotationY - rotationY) * 0.1;
+
+            houseGroup.rotation.x = rotationX;
+            houseGroup.rotation.y = rotationY;
+
+            // Leggera rotazione automatica quando non si interagisce
+            if (!isDragging) {
+                targetRotationY += 0.001;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
