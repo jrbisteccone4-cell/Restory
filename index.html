@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Architecta - La Casa dei Sogni</title>
+    <title>AEON - Il Portale dei Frammenti di Tempo</title>
     <style>
         * {
             box-sizing: border-box;
@@ -15,7 +15,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #0b0f19;
+            background-color: #030712;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             color: #ffffff;
         }
@@ -27,7 +27,7 @@
             left: 0;
             z-index: 1;
         }
-        /* UI Overlay */
+        /* UI Overlay & HUD */
         .ui-layer {
             position: absolute;
             top: 0;
@@ -39,84 +39,49 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            padding: 24px;
+            padding: 32px;
         }
         header {
             text-align: center;
             pointer-events: auto;
         }
         header h1 {
-            font-size: 1.5rem;
-            letter-spacing: 4px;
+            font-size: 1.25rem;
+            letter-spacing: 6px;
             text-transform: uppercase;
             font-weight: 300;
-            background: linear-gradient(45deg, #fff, #94a3b8);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
         }
         header p {
-            font-size: 0.8rem;
-            color: #64748b;
-            margin-top: 4px;
-            letter-spacing: 1px;
-        }
-        /* Controls Footer */
-        .controls-dock {
-            pointer-events: auto;
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            padding: 16px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            max-width: 480px;
-            margin: 0 auto;
-            width: 100%;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-        }
-        .btn-action {
-            background: transparent;
-            border: none;
-            color: #94a3b8;
-            font-size: 0.75rem;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .btn-action svg {
-            width: 24px;
-            height: 24px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 1.5;
-            transition: transform 0.3s ease;
-        }
-        .btn-action:hover, .btn-action.active {
+            font-size: 0.7rem;
             color: #38bdf8;
+            margin-top: 6px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
         }
-        .btn-action:hover svg {
-            transform: scale(1.1);
-        }
-        /* HUD Feedback */
-        .hud-status {
+        /* HUD Istruzioni Interattive */
+        .hud-instruction {
             position: absolute;
-            top: 90px;
+            bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(56, 189, 248, 0.1);
-            border: 1px solid rgba(56, 189, 248, 0.3);
-            padding: 8px 16px;
-            border-radius: 20px;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 12px 24px;
+            border-radius: 30px;
             font-size: 0.75rem;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
+            color: #94a3b8;
+            pointer-events: auto;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: all 0.5s ease;
+        }
+        .hud-instruction span {
             color: #38bdf8;
-            pointer-events: none;
-            opacity: 0.8;
+            font-weight: 500;
         }
     </style>
     <!-- Three.js CDN -->
@@ -128,154 +93,92 @@
 
     <div class="ui-layer">
         <header>
-            <h1>Architecta</h1>
-            <p>Plastico 3D Interattivo</p>
+            <h1>AEON</h1>
+            <p>Osservatorio Globale Quantico</p>
         </header>
 
-        <div class="hud-status" id="hud-text">Trascina per ruotare • Pinch per scalare</div>
-
-        <div class="controls-dock">
-            <button class="btn-action active" onclick="changeMaterial('wood')">
-                <svg viewBox="0 0 24 24"><path d="M3 3h18v18H3zM3 9h18M9 3v18"/></svg>
-                <span>Rovere</span>
-            </button>
-            <button class="btn-action" onclick="changeMaterial('marble')">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>
-                <span>Marmo</span>
-            </button>
-            <button class="btn-action" onclick="changeMaterial('glass')">
-                <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
-                <span>Vetro Aura</span>
-            </button>
-            <button class="btn-action" onclick="resetView()">
-                <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-                <span>Reset</span>
-            </button>
+        <div class="hud-instruction" id="hud-text">
+            Trascina per ruotare il globo • <span>Pizzica o clicca a lungo</span> per attivare il Focus Armonico
         </div>
     </div>
 
     <script>
-        // Setup Scena Three.js
+        // Setup della Scena 3D
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x0b0f19, 0.05);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(10, 12, 14);
+        camera.position.set(0, 0, 7);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         container.appendChild(renderer.domElement);
 
-        // Illuminazione Ambientale e Atmosferica (Sun-Dial style)
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        // Creazione del Globo di Vetro Zaffiro
+        const globeGeo = new THREE.SphereGeometry(2, 64, 64);
+        
+        // Materiale riflettente avanzato (effetto vetro liquido)
+        const globeMat = new THREE.MeshPhysicalMaterial({
+            color: 0x0284c7,
+            metalness: 0.1,
+            roughness: 0.1,
+            transmission: 0.6, // Trasparenza vetrosa
+            thickness: 1.2,
+            reflectivity: 0.9,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.1
+        });
+
+        const globe = new THREE.Mesh(globeGeo, globeMat);
+        scene.add(globe);
+
+        // Particelle di Luce / Frammenti di Tempo sulla superficie
+        const particlesGeo = new THREE.BufferGeometry();
+        const particlesCount = 300;
+        const posArray = new Float32Array(particlesCount * 3);
+
+        for(let i = 0; i < particlesCount * 3; i++) {
+            // Distribuzione sferica attorno al globo
+            const u = Math.random();
+            const v = Math.random();
+            const theta = u * 2.0 * Math.PI;
+            const phi = Math.acos(2.0 * v - 1.0);
+            const r = 2.05; // Leggermente sopra la superficie del globo
+
+            posArray[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+            posArray[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+            posArray[i * 3 + 2] = r * Math.cos(phi);
+        }
+
+        particlesGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMat = new THREE.PointsMaterial({
+            size: 0.03,
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+
+        const particleSphere = new THREE.Points(particlesGeo, particlesMat);
+        scene.add(particleSphere);
+
+        // Luci Atmosferiche
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
         scene.add(ambientLight);
 
-        const sunLight = new THREE.DirectionalLight(0xfff5ea, 1.2);
-        sunLight.position.set(15, 25, 10);
-        sunLight.castShadow = true;
-        sunLight.shadow.mapSize.width = 2048;
-        sunLight.shadow.mapSize.height = 2048;
-        scene.add(sunLight);
+        const pointLight = new THREE.PointLight(0x38bdf8, 2, 50);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
 
-        const blueLight = new THREE.DirectionalLight(0x38bdf8, 0.4);
-        blueLight.position.set(-15, -10, -10);
-        scene.add(blueLight);
+        const purpleLight = new THREE.PointLight(0x818cf8, 1.5, 50);
+        purpleLight.position.set(-5, -5, -5);
+        scene.add(purpleLight);
 
-        // Gruppo Principale della Casa (La Dollhouse)
-        const houseGroup = new THREE.Group();
-        scene.add(houseGroup);
-
-        // Pavimento Base
-        const floorGeo = new THREE.BoxGeometry(6, 0.2, 6);
-        let floorMat = new THREE.MeshStandardMaterial({ 
-            color: 0xd4a373, 
-            roughness: 0.4,
-            metalness: 0.1
-        });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.position.y = -0.1;
-        floor.receiveShadow = true;
-        houseGroup.add(floor);
-
-        // Pareti Minimaliste (Stile Plastico)
-        const wallMat = new THREE.MeshStandardMaterial({ 
-            color: 0xf8fafc, 
-            roughness: 0.8 
-        });
-
-        // Parete di Fondo
-        const backWallGeo = new THREE.BoxGeometry(6, 3, 0.2);
-        const backWall = new THREE.Mesh(backWallGeo, wallMat);
-        backWall.position.set(0, 1.5, -2.9);
-        backWall.castShadow = true;
-        backWall.receiveShadow = true;
-        houseGroup.add(backWall);
-
-        // Parete Laterale
-        const sideWallGeo = new THREE.BoxGeometry(0.2, 3, 6);
-        const sideWall = new THREE.Mesh(sideWallGeo, wallMat);
-        sideWall.position.set(-2.9, 1.5, 0);
-        sideWall.castShadow = true;
-        sideWall.receiveShadow = true;
-        houseGroup.add(sideWall);
-
-        // Elemento d'Arredo Minimalista (Divano/Blocco Design)
-        const sofaGeo = new THREE.BoxGeometry(3, 0.8, 1.2);
-        const sofaMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.5 });
-        const sofa = new THREE.Mesh(sofaGeo, sofaMat);
-        sofa.position.set(0.5, 0.4, -1.5);
-        sofa.castShadow = true;
-        houseGroup.add(sofa);
-
-        // Tavolino centrale
-        const tableGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.4, 32);
-        const tableMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2 });
-        const table = new THREE.Mesh(tableGeo, tableMat);
-        table.position.set(0.5, 0.2, 0.5);
-        table.castShadow = true;
-        houseGroup.add(table);
-
-        // Gestione dei Materiali interattivi
-        function changeMaterial(type) {
-            document.querySelectorAll('.btn-action').forEach(b => b.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-
-            const hud = document.getElementById('hud-text');
-            if (type === 'wood') {
-                floor.material.color.setHex(0xd4a373);
-                floor.material.roughness = 0.4;
-                hud.innerText = "Materiale applicato: Rovere Naturale";
-            } else if (type === 'marble') {
-                floor.material.color.setHex(0xf1f5f9);
-                floor.material.roughness = 0.1;
-                hud.innerText = "Materiale applicato: Marmo Bianco Carrara";
-            } else if (type === 'glass') {
-                floor.material.color.setHex(0x38bdf8);
-                floor.material.roughness = 0.0;
-                floor.material.transparent = true;
-                floor.material.opacity = 0.8;
-                hud.innerText = "Materiale applicato: Vetro Strutturale Luminescente";
-            }
-        }
-
-        function resetView() {
-            targetRotationX = 0.5;
-            targetRotationY = 0.8;
-            houseGroup.scale.set(1, 1, 1);
-            document.getElementById('hud-text').innerText = "Vista ripristinata";
-        }
-
-        // Interazione Touch & Mouse per la rotazione orbitale della Dollhouse
+        // Interazione e Gestione del "Focus Armonico"
         let isDragging = false;
         let previousMousePosition = { x: 0, y: 0 };
-        let targetRotationX = 0.5;
-        let targetRotationY = 0.8;
-        let rotationX = 0.5;
-        let rotationY = 0.8;
+        let isHarmonicFocusActive = false;
 
         window.addEventListener('mousedown', (e) => {
             isDragging = true;
@@ -283,42 +186,55 @@
         });
 
         window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
+            if (!isDragging || isHarmonicFocusActive) return;
             const deltaX = e.clientX - previousMousePosition.x;
             const deltaY = e.clientY - previousMousePosition.y;
 
-            targetRotationY += deltaX * 0.008;
-            targetRotationX += deltaY * 0.008;
-
-            // Limita l'inclinazione verticale
-            targetRotationX = Math.max(0.1, Math.min(Math.PI / 2, targetRotationX));
+            globe.rotation.y += deltaX * 0.005;
+            globe.rotation.x += deltaY * 0.005;
+            particleSphere.rotation.y = globe.rotation.y;
+            particleSphere.rotation.x = globe.rotation.x;
 
             previousMousePosition = { x: e.clientX, y: e.clientY };
         });
 
         window.addEventListener('mouseup', () => { isDragging = false; });
 
-        // Touch support per dispositivi mobili
-        window.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                isDragging = true;
-                previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-            }
+        // Simulazione del Focus Armonico al doppio click / tap prolungato
+        window.addEventListener('dblclick', () => {
+            triggerHarmonicFocus();
         });
 
-        window.addEventListener('touchmove', (e) => {
-            if (!isDragging || e.touches.length !== 1) return;
-            const deltaX = e.touches[0].clientX - previousMousePosition.x;
-            const deltaY = e.touches[0].clientY - previousMousePosition.y;
+        function triggerHarmonicFocus() {
+            isHarmonicFocusActive = true;
+            const hud = document.getElementById('hud-text');
+            hud.innerHTML = "<span>Focus Armonico Attivo:</span> Apertura portale dimensionale in corso...";
+            hud.style.borderColor = "rgba(129, 140, 248, 0.6)";
 
-            targetRotationY += deltaX * 0.008;
-            targetRotationX += deltaY * 0.008;
-            targetRotationX = Math.max(0.1, Math.min(Math.PI / 2, targetRotationX));
+            // Animazione di espansione (zoom quantico)
+            let scaleFactor = 1;
+            const expandInterval = setInterval(() => {
+                scaleFactor += 0.05;
+                globe.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                particleSphere.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                globeMat.opacity = Math.max(0, 1 - (scaleFactor - 1) * 2);
 
-            previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        });
+                if (scaleFactor > 3) {
+                    clearInterval(expandInterval);
+                    setTimeout(resetHarmonicFocus, 2000);
+                }
+            }, 30);
+        }
 
-        window.addEventListener('touchend', () => { isDragging = false; });
+        function resetHarmonicFocus() {
+            isHarmonicFocusActive = false;
+            globe.scale.set(1, 1, 1);
+            particleSphere.scale.set(1, 1, 1);
+            globeMat.opacity = 1;
+            const hud = document.getElementById('hud-text');
+            hud.innerHTML = "Trascina per ruotare il globo • <span>Pizzica o clicca a lungo</span> per attivare il Focus Armonico";
+            hud.style.borderColor = "rgba(56, 189, 248, 0.2)";
+        }
 
         // Responsive Resize
         window.addEventListener('resize', () => {
@@ -327,20 +243,13 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        // Loop di Animazione Fluido
+        // Loop di Animazione
         function animate() {
             requestAnimationFrame(animate);
 
-            // Interpolazione fluida della rotazione (Lerp)
-            rotationX += (targetRotationX - rotationX) * 0.1;
-            rotationY += (targetRotationY - rotationY) * 0.1;
-
-            houseGroup.rotation.x = rotationX;
-            houseGroup.rotation.y = rotationY;
-
-            // Leggera rotazione automatica quando non si interagisce
-            if (!isDragging) {
-                targetRotationY += 0.001;
+            if (!isDragging && !isHarmonicFocusActive) {
+                globe.rotation.y += 0.002;
+                particleSphere.rotation.y += 0.002;
             }
 
             renderer.render(scene, camera);
